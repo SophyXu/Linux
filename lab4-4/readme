@@ -1,0 +1,224 @@
+<help>
+Linux Project 4
+BY -- Xu xiaoyao
+
+myshell支持如下内部命令:
+(1) cd    
+(2) clr      
+(3) dir    
+(4) environ
+(5) echo
+(6) help
+(7) quit
+(8) myshell
+(9) pwd
+(10) bat
+并且，其他的命令行输入可被解释为程序调用，myshell 创建并执行这个程序。
+
+输入help more可以查看整个用户手册，或输入如下命令寻求帮助:
+help command                    —— 查看内部命令
+help shell                      —— 查看myshell基本信息
+help help                       —— 查看help用法
+help bat                        —— 查看myshell如何执行批处理文件
+help i/o redirection            —— 了解重定向
+help background                 —— see the the background mode
+help path                       —— 查看路径格式
+#
+
+<help shell>
+-- 用户名: sophia
+-- 域名: Turing
+-- myshell: 既可执行内部命令，又可执行shell脚本
+#
+
+FUNCTIONS:
+
+------------------------Internal Commands-------------------------
+<help command> <help commands> <help internal command> <help internal commands>
+myshell支持如下内部命令:
+(1) cd    
+(2) clr      
+(3) dir    
+(4) environ
+(5) echo
+(6) help
+(7) quit
+(8) myshell
+(9) pwd
+(10) bat
+并且，其他的命令行输入可被解释为程序调用，myshell 创建并执行这个程序。
+
+输入"help [command]"得到每条指令的更多细节.
+#
+
+<help bat> <help batchfile>
+------------------------Script File Support-----------------------
+myshell能够从文件中提取命令行输入，例如shell 使用以下命令行被调用：myshell a.bat, 批处理文件a.bat 包含一组命令集，当到达文件结尾时shell 退出。很明显，如果shell 被调用时没有使用参数，它会在屏幕上显示提示符请求用户输入。
+
+如果myshell无命令行输入被激活，则会要求用户通过显示屏输入命令。
+#
+
+
+
+<help i/o redirection> <help I/O Redirection> <help io redirection> <help IO redirection>
+------------------------I/O Redirection-------------------------
+I/O重定向是用户通过输入文件和输出文件代替标准输入（键盘）和标准输出（显示屏）。
+输入重定向使输入文件流替换为指定文件；输入重定向使输出文件替换为指定文件，而不是输出在显示屏。
+
+myshell同行支持输入以及输出重定向。
+
+e.g.   programname arg1 arg2 <inputfile >outputfile
+使用arg1 和arg2 执行程序programname，输入文件流被替换为inputfile，输出文件流被替换为outputfile。
+
+显示文件全路径:
+    /home/username/a.txt
+关于文件路径格式，输入help path获得更多信息。
+
+stdin 重定向支持以下内部命令: cd, dir, echo.
+stdout 重定向支持以下内部命令：dir、environ、echo、help。: dir, environ, echo, help, pwd.
+
+<help redirection> 
+   * 使用输入重定向时，如果重定向字符是<，则打开文件，若该文件不存在，则输出Path Error
+     e.g.      cd  <a.txt 
+   * 使用输出重定向时，如果重定向字符是>，则创建输出文件，如果存在则覆盖之。
+    e.g.      ls   >a.txt
+   * 如果重定向字符为>>，也会创建输出文件，如果存在则添加到文件尾。
+     e.g.    environ  >>a.txt
+同时进行输入、输出重定向：
+    e.g.   echo  <m.txt >n.txt
+             dir  >m.txt >n.txt 
+若读写权限不够，则显示Open Error。
+#
+
+
+
+<help background execution> <help background>
+-----------------------Background Execution---------------------
+一般，当命令在执行时，用户需要等待命令执行完毕才能输入下一个命令。然而，特别是从文件中读取命令时，运行时间相对长。后台运行使得用户不必等待命令执行。
+
+myshell 支持后台程序执行。
+如果在命令行后添加&字符，程序在后台运行，在加载完程序后需要立刻返回命令行提示符。
+#
+
+
+--------------------Detail usage of each command---------------
+
+<help cd>
+格式:    cd [directory]
+-- 切换当前工作目录到[directory].
+   e.g.    cd /home
+   * 此命令也改变PWD环境变量（输入pwd查看该变量）
+   * 输入help path查看更多目录路径信息
+
+   如果未输入[directory]，则显示当前所在目录。
+   如果目录不存在，显示Path Error。
+   此外，用户可以通过文件输入目录名称，如：
+   e.g.    cd <a.txt
+#
+
+<help clr> <help clear>
+格式:      clr
+或         clear
+-- 清屏，无需参数。
+#
+
+<help dir>
+格式:    dir [directory] 
+-- 列出目录[directory]的内容。
+   e.g.   dir  /home
+   此命令不同与cd,它不改变当前工作目录，也不该便PWD环境变量（输入pwd查看该变量）
+	* 输入help path查看更多目录路径信息
+   
+   若未输入目录名称，则列出当前目录下所有内容。
+   若该目录不存在，则显示Path Error。
+
+   此外，用户可以通过文件输入目录名称，如
+   e.g.   dir <a.txt
+   用户也可以将目录内容输出到指定文件:
+   e.g.   dir >b.txt      or    dir >b.txt >c.txt
+   符号>可被替换为>>，输入help redirection查看>与>>的区别。
+   用户可以同时使用输入、输出重定向，如：
+   e.g.   dir <a.txt >b.txt >c.txt
+	* 输入help path查看更多目录路径信息
+#
+
+<help environ>
+格式:    environ 
+-- 列出所有的环境变量 or into one file or more than one file as:
+   
+   可将输入结果重定向至一个或多个文件，如：
+   e.g.   envieron     或     environ >b.txt     或    environ >b.txt >c.txt
+   符号>可被替换为>>，输入help redirection查看>与>>的区别。
+	* 输入help path查看更多目录路径信息
+#
+
+<help echo>
+格式:    echo [comment]
+-- 在屏幕上显示<comment>并换行（多个空格和制表符可能被缩减为一个空格）。
+   e.g.   echo hello world
+   hello world将会打印在屏幕上。
+   
+   [comment]可以从一个或多个文件中读取，如：
+   e.g.   echo <a.txt   或   echo <a.txt <b.txt
+   也可以输出到一个或多个文件中，如：
+   e.g.   echo hello world >c.txt  或  echo hello world >c.txt >d.txt
+   符号>可被替换为>>，输入help redirection查看>与>>的区别。
+    用户可以同时使用输入、输出重定向，如：
+   e.g.   echo <a.txt <b.txt  >c.txt >d.txt
+	* 输入help path查看更多目录路径信息
+#
+
+<help help>
+格式:    help   或    ? 
+--  显示用户手册。
+	* 输入help [command]"查看更多命令使用信息
+   e.g.    help dir     或      ? dir 
+	* 输入help command" 查看内部命令
+   用户可将帮助信息输出到一个或多个文件中，如：
+   e.g.    help dir >c.txt     或     help dir >c.txt >d.txt
+   符号>可被替换为>>，输入help redirection查看>与>>的区别。
+	* 输入help path查看更多目录路径信息
+#
+
+<help myshell>
+格式:       myshell batchfile
+或          myshell <batchfile
+-- 从批处理文件读取命令并执行。
+   e.g.     myshell a.bat    或   myshell <a.bat
+   a.bat为批处理文件，包含一组命令集。
+
+   用户可将执行结果输出到一个或多个文件中，如：
+   e.g.     myshell a.bat >c.txt      or    myshell a.bat >c.txt >d.txt
+   符号>可被替换为>>，输入help redirection查看>与>>的区别。
+	* 输入help path查看更多目录路径信息
+#
+
+<help pwd>
+格式:     pwd
+-- 显示当前路径。
+	*如果你想列出所有环境变量，输入命令environ。
+   用户可将执行结果输出到一个或多个文件中，如：
+   e.g.     pwd a.bat >c.txt      或    pwd a.bat >c.txt >d.txt
+   符号>可被替换为>>，输入help redirection查看>与>>的区别。
+	* 输入help path查看更多目录路径信息
+#
+
+<help quit>  <help exit>
+格式:    quit   
+或       exit  
+-- 退出shell，无需参数。
+#
+
+
+
+<help path> <help ..> <help .> <help ~>
+---------------------Directory path and File path-------------------
+..   .  和 ~ 可以用于路径名称中.
+.. 表示当前工作目录的父目录
+.  表示当前工作目录
+~  表示主目录
+如果文件名或目录名包含一个空格，则输入“\ ”，如：
+  e.g.   echo  <a\ b  ( 显示"a b"的文件内容 )
+除此之外，路径中不能出现空格，否则将会显示Path Error
+#
+
