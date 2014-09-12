@@ -1,0 +1,37 @@
+#! /bin/bash
+read -p "Enter a string: " str		# 读入待检测字符串
+len=${#str}							# 获取字符串长度
+j=0;
+# 删除字符串中的非字母,并将每个字母依次存入 array 数组
+for((i=0;$i<$len;i++))
+do
+	ch=${str:$i:1} # 获取单个字母	
+	if [[ ! $ch > "z" && ! $ch < "a" ]] # 判断是否是字母
+		then
+			array[$j]=$ch				# 将字母读入 array 数组
+			j=$((j+1))
+	fi
+done
+len=$j
+j=$((j-1))
+i=0
+# 判断是否是回文,i 和 j 分别从字符串的开头和结尾
+# 开始依次索引,若不相等,则不是回文
+while [ $i -lt $j ]
+do
+	if [ ${array[$i]} != ${array[$j]} ];then
+		echo "\"$str\" is not a palindrome."
+		exit 0
+	fi
+i=$((i+1))
+j=$((j-1))
+done
+echo -n \"
+# 打印回文串
+for ch in "${array[@]}"
+do
+	echo -n $ch
+done
+echo -n \"
+echo " is a palindrome."
+exit 0
