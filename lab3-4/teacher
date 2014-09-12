@@ -1,0 +1,639 @@
+#! /bin/bash
+back()														#返回系统主界面
+{
+	clear
+	exit
+}
+stu1()														#创建学生帐号
+{
+    while true
+    do
+	clear
+	echo "作业管理系统>老师登录>$username老师界面>创建学生帐号"						#显示当前所在位置
+	echo "=================================================="
+        echo "--输入0返回老师界面--"
+	echo " "
+	echo "请选择该学生所对应课程："
+	grep $username courses|awk '{print $1}'									#显示该教师所教授的所有课程
+	echo " "
+	read course
+        if [ "$course" = "0" ]											#若输入为0，则返回菜单界面
+	    then
+                login
+        fi
+	test=$(grep $course courses|grep $username|awk '{print $1}')						#判断该课程名是否存在
+	if [ "$test" != "$course" ]
+	   then
+		zenity --info --title='错误信息' --text="该课程不在授课范围内" 					#若不存在，则弹出错误信息
+	   else
+		clear
+		echo "作业管理系统>老师登录>$username老师界面>添加学生帐号"
+		echo "=================================================="
+		echo " "
+     	   	echo "请输入学号："										#输入新学号
+     	   	read num
+       		t=$(grep $num student_info|awk '{print $1}')							
+        	if [ "$t" != "" ]										#若该学生已存在
+	            then
+	           	echo "请输入姓名："
+		    	read name										#输入新姓名
+		    	echo $course $username $num>>course_student						#将课程与姓名添加到关联文件中
+			mkdir ./"$username"/"$course"/"$name"							#在该课程下新增该学生目录
+	            	zenity --info --title='提示信息' --text="$name帐号创建成功！"				#弹出对话框显示创建成功
+		    	clear
+	            else
+	            	echo "请输入姓名："									#若该学生之前不存在
+		    	read name
+		    	echo $num $name>>student_info								#添加到学生信息中
+		    	echo $course $username $num>>course_student						#将课程与姓名添加到关联文件中
+			mkdir ./"$username"/"$course"/"$name"							#在该课程下新增该学生目录
+	   	    	zenity --info --title='提示信息' --text="$name帐号创建成功！"				#弹出对话框显示创建成功
+		    	clear
+        	fi
+	fi
+    done
+}
+stu2()														#修改学生帐号
+{
+	while true
+	do
+		clear
+		echo "作业管理系统>老师登录>$username老师界面>修改学生帐号"					#显示当前所在位置
+		echo "=================================================="
+		echo "--输入0返回老师界面--"
+		echo " "
+		echo "请输入该学生所学习的课程："
+		read name
+		if [ "$name" = "0" ]										#若输入为0，则返回菜单界面
+			then
+		        	login
+		fi
+		test=$(grep $name courses|grep $username|awk '{print $1}')					#判断输入的课程名是否存在
+		if [ "$test" != "$name" ]
+			then
+				zenity --info --title='错误信息' --text="该课程不存在！" 			#若不存在，则显示错误信息
+			   else
+				echo " "									#显示该课程的所有学生
+				grep $name course_student|grep $username course_student|awk '{print $3}'|while read number
+				do
+					echo "-------------------------"
+					student=$(grep $number student_info|awk '{print $2}')
+					echo "$student"
+				done
+				echo "-------------------------"
+				echo "输入要修改的学生姓名："
+				read change
+				echo "--------------"
+				num=$(grep $change student_info|awk '{print $1}')				#显示需要编辑学生的信息
+				echo "学号： $num"
+				n=$(grep $change student_info|awk '{print $2}')
+				echo "姓名： $n"
+				echo "--------------"
+				echo "修改为："
+				echo "新学号:"
+				read new_num									#读入新学号
+				echo "新姓名："
+				read new_n									#读入新姓名
+				sed -i 's/'$num' '$n'/'$new_num' '$new_n'/g' student_info			#在学生信息中更新
+				sed -i 's/'$num'/'$new_num'/g' course_student					#在课程与学生关联文件中更新
+				if [ "$n" != "$new_n" ]								#若该学生创建了作业，
+					then									#则更新该学生目录名称。
+						mv ./"$username"/"$name"/"$n" ./"$username"/"$name"/"$new_n"
+				fi		
+				zenity --info --title='提示信息' --text="修改成功！"				#弹出对话框提示修改成功
+		fi
+	done
+}
+stu3()														#删除学生帐号
+{
+	while true
+	do
+		clear
+		echo "作业管理系统>老师登录>$username老师界面>删除学生帐号"					#显示当前所在位置
+		echo "=================================================="
+		echo "-----------------输入0返回老师界面----------------"
+		echo " "
+		echo "请选择该学生所在课程："
+		grep $username courses|awk '{print $1}'								#显示该教师教授的所有课程
+		echo " "
+		read course
+		if [ "$course" = "0" ]										#若输入为0，则返回菜单界面
+			then
+		        	login
+		fi
+		test=$(grep $course courses|awk '{print $1}')							#判断该课程是否存在
+		if [ "$test" = "" ]
+			then
+				zenity --info --title='错误信息' --text="该课程不在授课范围内" 			#若不存在，则显示错误信息
+		   	else
+				clear										
+				echo "作业管理系统>老师登录>$username老师界面>删除学生帐号"			
+				echo "=================================================="
+				echo " "
+		     	   	echo "请输入学号："								
+		     	   	read num
+		       		t=$(grep $num course_student|awk '{print $3}')					#判断该学生是否在上该课程
+				if [ "$t" = "$num" ]
+					then
+						echo "学号：$(grep $num student_info|awk '{print $1}')"		#显示该学生的信息
+						echo "姓名：$(grep $num student_info|awk '{print $2}')"
+						n=$(grep $num student_info|awk '{print $2}')
+						echo "确认删除？"						#确认是否删除
+						echo "y/n"
+						read wh
+						if [ "$wh" = "y" ]
+							then	#从课程与学生关联文件中删除，删除该学生在该课程下的目录
+								sed -i '/'$course' '$username' '$num'/d' course_student	
+								rm -r ./"$username"/"$course"/"$n"
+						    		zenity --info --title='提示信息' --text="$name帐号删除成功！"
+						fi
+					else
+				   	    	zenity --info --title='错误信息' --text="该学生未在该课程中！"	#若不上该课程，则显示错误信息
+					    	clear
+				fi
+		fi
+	done
+}
+crse1()														#新建课程信息
+{
+	while true
+	do
+		clear
+		echo "作业管理系统>老师登录>$username老师界面>新建课程信息"					#显示当前所在位置
+		echo "=================================================="
+		echo "--输入0返回老师界面--"
+		echo " "
+		echo "该课程名称："										#输入该课程名称
+		read name
+		if [ "$name" = "0" ]
+			then
+		        	login
+		fi
+		test=$(grep $name courses|grep $username|awk '{print $1}')					#判断该课程是否已经存在
+		if [ "$test" = "$name" ]
+			then
+				zenity --info --title='错误信息' --text="该课程已存在！" 			#若存在，则弹出错误信息对话框
+			else
+				echo "上课时间："								#输入上课时间	
+				read time
+				echo "上课地点："								#输入上课地点
+				read loc
+			   	echo $name $username $time $loc>>courses					#将信息写入课程信息文件
+				mkdir ./"$username"/"$name"					#在该教师目录下新建该课程文件夹，供学生提交作业
+				touch 作业 ./"$username"/"$name"
+				zenity --info --title='提示信息' --text="$name课程创建成功！"			#弹出对话框显示创建成功
+		fi
+ 	done
+}
+crse2()														#编辑课程信息
+{
+	while true
+	do
+		clear
+		echo "作业管理系统>老师登录>$username老师界面>编辑课程信息"					#显示当前所在位置
+		echo "=================================================="
+		echo "--输入0返回老师界面--"
+		echo " "
+		echo "请选择要编辑的课程："
+		grep $username courses|awk '{print $1}'								#显示该教师所教授的所有课程
+		echo " "	
+		read course
+		if [ "$course" = "0" ]										#若输入为0，则返回菜单界面
+			then
+		        	login
+		fi
+		test=$(grep $course courses|awk '{print $1}')							#判断该课程是否存在
+		if [ "$test" = "$name" ]
+			then	
+				zenity --info --title='错误信息' --text="该课程不存在！" 			#若不存在，弹出对话框显示错误信息
+		   	else
+				echo "【1】课程名称："								#若存在，显示课程信息
+				grep $course courses|grep $username|awk '{print $1}'
+				echo "【2】上课时间："
+				t=$(grep $course courses|grep $username|awk '{print $3}')
+				echo "$t"
+				echo "【3】上课地点："
+				d=$(grep $course courses|grep $username|awk '{print $4}')
+				echo "$d"
+				echo " "
+				echo "请选择要编辑信息的编号："							#选择要编辑的课程信息
+				read num
+				case $num in
+					1)echo "请输入新课程名称："						#编辑课程名称
+					read a
+					sed -i '/'$course' '$username'/a\'$a' '$username' '$t' '$d'' courses	#将课程信息中的名称更新
+					sed -i '/'$course' '$username'/d' courses
+					mv ./"$username"/"$course" ./"$username"/"$a"				#修改该课程目录名称
+					sed -i '/'$course' '$username'/a\'$a' '$username' '$t' '$d'' course_student
+					sed -i '/'$course' '$username'/d' course_student		 	#将课程与学生关联文件中的名称更新
+					zenity --info --title='提示信息' --text="课程名称编辑完成！"
+					;;
+					2)echo "请输入新上课时间："						#编辑上课时间
+					read a
+					sed -i '/'$course' '$username'/a\'$course' '$username' '$a' '$d'' courses	
+					sed -i '/'$course' '$username'/d' courses				#将课程信息中的名称更新
+					zenity --info --title='提示信息' --text="上课时间编辑完成！"
+					;;
+					3)echo "请输入新上课地点："						#编辑上课地点
+					read a
+					sed -i '/'$course' '$username'/a\'$course' '$username' '$t' '$a'' courses
+					sed -i '/'$course' '$username'/d' courses				#将课程信息中的名称更新
+					zenity --info --title='提示信息' --text="上课地点编辑完成！"
+					;;
+					*)echo"请输入正确的数字"
+					sleep 1
+				esac		
+		fi
+	done
+}
+crse3()														#删除课程信息
+{
+    while true
+    do
+	clear
+	echo "作业管理系统>老师登录>$username老师界面>删除课程信息"						#显示当前所在位置
+	echo "=================================================="
+        echo "--输入0返回老师界面--"
+	echo " "
+	echo "请选择要删除的课程："
+	grep $username courses|awk '{print $1}'									#显示该教师所教授的所有课程
+	echo " "	
+	read course
+        if [ "$course" = "0" ]											#若输入为0，则返回菜单界面
+	    then
+                login
+        fi
+	test=$(grep $course courses|grep $username|awk '{print $1}')						#判断该课程是否存在
+	if [ "$test" != "$course" ]
+	   then
+		zenity --info --title='错误信息' --text="该课程不存在！" 					#若不存在，弹出对话框显示错误信息
+	   else
+		echo "【1】课程名称："										#若存在，显示该课程信息
+		grep $course courses|grep $username|awk '{print $1}'
+		echo "【2】上课时间："
+		t=$(grep $course courses|grep $username|awk '{print $3}')
+		echo "$t"
+		echo "【3】上课地点："
+		d=$(grep $course courses|grep $username|awk '{print $4}')
+		echo "$d"
+		echo " "
+		echo "确认删除？"										#确认是否删除
+		echo "y/n"
+		read wh
+		if [ "$wh" = "y" ]
+			then
+				sed -i '/'$course' '$username'/d' courses					#从课程信息中删除
+				sed -i '/'$course' '$username'/d' course_student				#删除上该课程的学生信息
+				rm -r ./"$username"/"$course"							#删除该课程目录
+				zenity --info --title='提示信息' --text="该课程删除成功！"			#弹出对话框提示删除成功
+		fi
+	fi
+    done
+}
+crse4()														#显示课程信息
+{
+	while true
+	do
+		clear
+		echo "作业管理系统>老师登录>$username老师界面>显示课程信息"					#显示当前所在位置
+		echo "=================================================="
+		echo "--输入0返回老师界面--"
+		echo " "
+		echo "请选择要显示信息的课程："
+		grep $username courses|awk '{print $1}'								#显示该教师所教授的所有课程
+		echo " "	
+		read course
+		if [ "$course" = "0" ]										#若输入为0，则返回菜单界面
+			then
+		        	login
+		fi
+		test=$(grep $course courses|grep $username|awk '{print $1}')					#判断该课程是否存在
+		if [ "$test" != "$course" ]
+			then
+				zenity --info --title='错误信息' --text="该课程不存在！" 			#若不存在，弹出对话框显示错误信息
+			else											#若存在，显示该课程信息
+				echo "【1】课程名称："
+				grep $course courses|grep $username|awk '{print $1}'
+				echo "【2】上课时间："
+				t=$(grep $course courses|grep $username|awk '{print $3}')
+				echo "$t"
+				echo "【3】上课地点："
+				d=$(grep $course courses|grep $username|awk '{print $4}')
+				echo "$d"
+				echo " "
+				echo "按任意键继续"
+				read a
+		fi
+	done
+}
+post1()														#新建作业
+{
+	while true
+	do
+		clear
+		echo "作业管理系统>老师登录>$username老师界面>新建作业"						#显示当前所在位置
+		echo "=================================================="
+		echo "--输入0返回老师界面--"
+		echo " "
+		echo "请选择新建作业的课程："									#显示该教师所教授的所有课程
+		grep $username courses|awk '{print $1}'
+		echo " "	
+		read course
+		if [ "$course" = "0" ]										#若输入为0，则返回菜单界面
+			then
+		        	login
+		fi
+		test=$(grep $course courses|grep $username|awk '{print $1}')					#判断该课程是否存在
+		if [ "$test" != "$course" ]
+			then
+				zenity --info --title='错误信息' --text="该课程不存在！" 			#若不存在，弹出对话框显示错误信息
+			else
+				echo "作业名称："								
+				read n
+				cd ./"$username"/"$course"
+				touch "$n"
+				cd ../..									#新建一个作业文件，用该作业名命名
+				echo "$n">>./"$username"/"$course"/作业						#将作业信息统一记录在“作业”文件中
+				zenity --info --title='提示信息' --text="作业新建成功！" 			#弹出对话框显示创建成功
+		fi
+	done
+}
+post2()														#编辑作业
+{
+	while true
+	do
+		clear
+		echo "作业管理系统>老师登录>$username老师界面>编辑作业"						#显示当前所在位置
+		echo "=================================================="
+		echo "--输入0返回老师界面--"
+		echo " "
+		echo "请选择要编辑作业的课程："
+		grep $username courses|awk '{print $1}'								#显示该教师所教授的所有课程
+		echo " "	
+		read course
+		if [ "$course" = "0" ]										#若输入为0，则返回菜单界面	
+			then
+		        	login
+		fi
+		test=$(grep $course courses|grep $username|awk '{print $1}')					#判断该课程是否存在
+		if [ "$test" != "$course" ]
+			then
+				zenity --info --title='错误信息' --text="该课程不存在！" 			#若不存在，弹出对话框显示错误信息
+			else
+				echo "------------------"
+				cat ./"$username"/"$course"/作业						#若存在，则显示该课程所有作业
+				echo "------------------"		
+				echo "请选择需要编辑的作业"
+				read c
+				vi ./"$username"/"$course"/"$c"							#vim编辑作业
+		fi
+	done
+}
+post3()														#删除作业
+{
+	while true
+	do
+		clear
+		echo "作业管理系统>老师登录>$username老师界面>删除作业"						#显示当前所在位置
+		echo "=================================================="
+		echo "--输入0返回老师界面--"
+		echo " "
+		echo "请选择要删除作业的课程："
+		grep $username courses|awk '{print $1}'								#显示该教师所教授的所有课程
+		echo " "	
+		read course
+		if [ "$course" = "0" ]										#若输入为0，则返回菜单界面
+			then
+		        	login
+		fi
+		test=$(grep $course courses|grep $username|awk '{print $1}')					#判断该课程是否存在
+		if [ "$test" != "$course" ]
+			then
+				zenity --info --title='错误信息' --text="该课程不存在！" 			#若不存在，弹出对话框显示错误信息
+			else
+				cat ./"$username"/"$course"/作业						#显示该课程所有作业
+				echo "请选择需要删除的作业"
+				read c		
+				sed -i '/'$c'/d' ./"$username"/"$course"/作业					#作业信息中删除
+				rm -r ./"$username"/"$course"/"$c"						#删除该作业文件
+				zenity --info --title='提示信息' --text="该作业删除成功！" 			#弹出对话框显示删除成功
+		fi
+	done
+}
+post4()														#显示作业
+{
+	while true
+	do
+		clear
+		echo "作业管理系统>老师登录>$username老师界面>显示作业"						#显示当前所在位置
+		echo "=================================================="	
+		echo "--输入0返回老师界面--"
+		echo " "
+		echo "请选择要显示作业的课程："									#显示该教师所教授的所有课程
+		grep $username courses|awk '{print $1}'
+		echo " "	
+		read course
+		if [ "$course" = "0" ]
+			then
+		        	login
+		fi
+		test=$(grep $course courses|grep $username|awk '{print $1}')					#判断该课程是否存在
+		if [ "$test" != "$course" ]
+			then
+				zenity --info --title='错误信息' --text="该课程不存在！" 			#若不存在，弹出对话框显示错误信息
+			else
+				echo "------------------"
+				cat ./"$username"/"$course"/作业						#显示该课程所有作业
+				echo "------------------"
+				echo "请选择需要显示的作业"
+				read c
+				echo "-------------------------"
+				cat ./"$username"/"$course"/"$c"						#显示所选择的作业
+				echo "-------------------------"
+				echo "任意键继续"
+				read wa
+		fi
+	done
+}
+situ1()														#查找完成情况
+{
+	while true
+	do
+		clear
+		echo "作业管理系统>老师登录>$username老师界面>查找完成情况"					#显示当前所在位置
+		echo "=================================================="
+		echo "--输入0返回老师界面--"
+		echo " "
+		echo "请选择要需要查找的课程："
+		grep $username courses|awk '{print $1}'								#显示该教师所教授的所有课程
+		echo " "	
+		read course
+		if [ "$course" = "0" ]										#若输入为0，则返回菜单界面
+			then
+		        	login
+		fi
+		test=$(grep $course courses|grep $username|awk '{print $1}')					#判断该课程是否存在
+		if [ "$test" != "$course" ]
+			then
+				zenity --info --title='错误信息' --text="该课程不存在！" 			#若不存在，弹出对话框显示错误信息
+		   	else
+				echo " "									#显示该课程的所有学生
+				grep $course course_student|grep $username course_student|awk '{print $3}'|while read number	
+				do
+					echo "-------------------------"
+					student=$(grep $number student_info|awk '{print $2}')
+					echo "$student"
+				done
+				echo "-------------------------"
+				echo "请选择需要查询的学生："
+				read student
+				echo " "		
+				cat ./"$username"/"$course"/作业|while read hw					#显示此学生该课程作业的完成情况
+				do
+					echo "-------------------------"
+					echo "$hw:"
+					c=$(ls ./"$username"/"$course"/"$student"|grep $hw)
+					if [ "$c" != "" ]
+						then
+						 	cat ./"$username"/"$course"/"$student"/"$hw"
+						else
+							echo "【尚未完成】"					#若该文件不存在，则显示未完成
+					fi
+				done
+				echo "-------------------------"
+				echo "任意键继续"
+				read wa
+		fi
+	done
+}
+situ2()														#打印完成情况
+{
+	while true
+	do
+		clear
+		echo "作业管理系统>老师登录>$username老师界面>打印完成情况"					#显示当前所在位置
+		echo "=================================================="
+		echo "--输入0返回老师界面--"
+		echo " "
+		echo "请选择要需要打印的课程："
+		grep $username courses|awk '{print $1}'								#显示该教师所教授的所有课程
+		echo " "	
+		read course
+		if [ "$course" = "0" ]										#若输入为0，则返回菜单界面
+			then
+		        	login
+		fi
+		test=$(grep $course courses|grep $username|awk '{print $1}')					#判断该课程是否存在
+		if [ "$test" != "$course" ]
+			then
+				zenity --info --title='错误信息' --text="该课程不存在！" 			#若不存在，弹出对话框显示错误信息
+			else
+				echo " "										
+				cat ./"$username"/"$course"/作业						#若存在，则该课程的所有作业
+				echo "请选择需要打印的作业"
+				read c
+				grep $course course_student|grep $username course_student|awk '{print $3}'|while read number	#逐行打印所有学生作业
+				do
+					echo "-------------------------"
+					student=$(grep $number student_info|awk '{print $2}')
+					echo "$student:"
+					one=$(ls ./"$username"/"$course"/"$student"|grep $c)
+					if [ "$one" = "" ]
+						then
+							echo "(该作业还未创建)"					#该作业文件不存在，则显示未创建
+						else
+							cat ./"$username"/"$course"/"$student"/"$c"
+					fi
+				done
+				echo "-------------------------"
+				echo "任意键继续"
+				read wa
+
+		fi
+	done
+}
+login()
+{
+	while true
+	do
+		clear
+		echo "作业管理系统>教师登录>$username教师界面"							#显示菜单界面
+		echo "======================================="
+		echo "     欢迎 $username 老师,请选择操作"
+		echo "        --学生账户"
+		echo "              【1】-创建"
+		echo "              【2】-修改"
+		echo "              【3】-删除"
+		echo "              【4】-导入"
+		echo "        --课程信息"
+		echo "              【5】-新建"
+		echo "              【6】-编辑"
+		echo "              【7】-删除"
+		echo "              【8】-显示"
+		echo "        --发布作业、实验"
+		echo "              【9】-新建"
+		echo "              【10】-编辑"
+		echo "              【11】-删除"
+		echo "              【12】-显示"
+		echo "         --完成情况"
+		echo "              【13】-查找"									#查找指定学生某一课程中所有作业的完成情况
+		echo "              【14】-打印"									#打印指定课程中所有学生的某一项作业
+		echo "         --退出【0】"
+		echo "======================================="
+		read choice	
+		case $choice in
+			1)stu1;;										#创建学生账户
+		        2)stu2;;										#修改学生账户
+			3)stu3;;										#删除学生账户
+		        4)stu4;;										#导入学生账户
+			5)crse1;;										#新建课程信息
+		        6)crse2;;										#编辑课程信息
+			7)crse3;;										#删除课程信息
+		        8)crse4;;										#显示课程信息
+			9)post1;;										#新建作业
+		        10)post2;;										#编辑作业
+			11)post3;;										#删除作业
+		        12)post4;;										#显示作业
+			13)situ1;;										#查找完成情况
+		        14)situ2;;										#打印完成情况
+			0)back;;										#0返回系统主界面
+			*)echo"请输入正确的数字"								#其他数字，提示错误信息
+			sleep 1
+			clear;;
+		esac
+       done
+}
+while true
+	do
+		clear
+		echo "作业管理系统>教师登录"									#教师登录界面
+		echo "     -------------------------"
+		echo "     --------教师登录---------"
+		echo "     ------------------------- "
+		echo "请输入教师工号："
+	      	echo "<输入0返回系统主界面>"
+		echo " "
+		read username											#教师工号登录
+		if [ "$username" = "0" ]									#若输入为0，则返回系统主界面
+			then
+				back
+		fi
+		a=$(grep $username teacher_login|awk '{print $1}')						#判断该工号是否存在	
+		if [ "$a" != "$username" ]
+			then
+				zenity --info --title='错误信息' --text="该用户名不存在"				#若不存在，则弹出对话框提示错误信息
+				clear
+		    else
+			echo "请输入教师密码："									#若存在，则提示读入密码
+			read pass
+			p=$(grep $username teacher_login|awk '{print $2}')					#判断密码是否正确
+			if [ "$p" != "$pass" ]
+				then
+					zenity --info --title='错误信息' --text="密码错误！"			#若不正确，则弹出对话框提示密码错误
+				else
+					username=$(grep $a teacher_info|awk '{print $2}')			#若正确，则获取该教师姓名
+					zenity --info --title='教师登录' --text="教师 $username 登录成功！"	#弹出对话框显示登录成功
+					login
+			fi
+		fi
+	done
